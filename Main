@@ -1,0 +1,74 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.stats import norm
+
+# Parameters
+num_particles = 10000
+num_steps = 10000
+step_std_dev = 1
+
+# Initialize particle positions
+positions = np.zeros(num_particles)
+std_devs = []
+
+# Function to perform random walk
+def random_walk(positions, num_steps, step_std_dev):
+    for step in range(num_steps):
+        # Draw random steps from a Gaussian distribution
+        steps = np.random.normal(0, step_std_dev, num_particles)
+        # Update positions
+        positions += steps
+
+        # Compute histogram for the current step
+        if step % 1000 == 0:  # Compute and plot at every 1000 steps
+            hist, bins = np.histogram(positions, bins=100, density=True)
+            bin_centers = 0.5 * (bins[1:] + bins[:-1])
+            mu, std = norm.fit(positions)
+
+            plt.hist(positions, bins=100, density=True, alpha=0.6, color='g')
+            plt.plot(bin_centers, norm.pdf(bin_centers, mu, std), 'r--')
+            plt.title(f"Step {step}")
+            plt.xlabel("Position")
+            plt.ylabel("Density")
+            plt.xlim(-400, 400)
+            plt.show()
+
+            std_devs.append((step, std))
+
+    return positions
+
+# Perform the random walk
+final_positions = random_walk(positions, num_steps, step_std_dev)
+
+# Extract steps and standard deviations
+steps, std_devs = zip(*std_devs)
+steps = np.array(steps)
+std_devs = np.array(std_devs)
+
+# Plot standard deviation vs. time (steps)
+plt.plot(steps, std_devs, 'bo-')
+plt.title("Standard Deviation vs. Time (steps)")
+plt.xlabel("Time (steps)")
+plt.ylabel("Standard Deviation")
+plt.show()
+
+# Plot mean squared displacement vs. time
+mean_squared_displacements = std_devs ** 2
+plt.plot(steps, mean_squared_displacements, 'bo-')
+plt.title("Mean Squared Displacement vs. Time")
+plt.xlabel("Time (steps)")
+plt.ylabel("Mean Squared Displacement")
+plt.show()
+
+# Fit a line to the mean squared displacement vs. time data
+slope, intercept = np.polyfit(steps, mean_squared_displacements, 1)
+diffusion_coefficient1 = slope / 2
+diffusion_coefficient2 = diffusion_coefficient1/(100**2)
+
+# Assuming the units of steps are in seconds and positions are in meters
+diffusion_units1 = "cm^2/s"
+diffusion_units2 = "m^2/s"
+
+# Print the estimated diffusion coefficient
+print(f"Estimated Diffusion Coefficient: {diffusion_coefficient1} {diffusion_units1}")
+print(f"Estimated Diffusion Coefficient: {diffusion_coefficient2} {diffusion_units2}")
